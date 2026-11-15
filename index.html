@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Cuenta regresiva</title>
+
+  <!-- App instalable: se abre a pantalla completa desde el ícono -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f5f0e6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cuenta regresiva">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-192.png">
+
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #fdfbf7;
+      -webkit-user-select: none; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh; height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      box-sizing: border-box;
+      font-family: 'Georgia', serif;
+      color: #333;
+    }
+    .countdown-container {
+      width: 100%; height: 100%;
+      box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      border: 2px solid #d4af37;
+      outline: 1px solid #d4af37; outline-offset: -10px;
+      padding: 5vmin;
+    }
+    h3 {
+      color: #5c4033; margin: 0 0 6vmin;
+      font-size: clamp(1.2rem, 7vmin, 3.5rem);
+      letter-spacing: 0.15em; font-weight: normal;
+    }
+    #countdown {
+      display: flex; justify-content: center; align-items: flex-start;
+      gap: 2vmin; width: 100%;
+    }
+    .unit { flex: 0 1 auto; min-width: 0; }
+    .num {
+      display: block; font-weight: bold; color: #8b5a2b;
+      font-size: clamp(1.8rem, 13vmin, 8rem); line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .label {
+      font-size: clamp(0.7rem, 3.2vmin, 1.4rem);
+      text-transform: uppercase; color: #666; letter-spacing: 0.08em;
+    }
+    .sep {
+      color: #d4af37; font-size: clamp(1.5rem, 10vmin, 6rem); line-height: 1.1;
+    }
+    .done { color: #8b5a2b; font-size: clamp(1.5rem, 9vmin, 5rem); margin: 0; }
+  </style>
+</head>
+<body>
+
+<div class="countdown-container">
+  <h3>FALTA MUY POCO</h3>
+
+  <div id="countdown">
+    <div class="unit"><span id="days" class="num">00</span><span class="label">Días</span></div>
+    <div class="sep">:</div>
+    <div class="unit"><span id="hours" class="num">00</span><span class="label">Horas</span></div>
+    <div class="sep">:</div>
+    <div class="unit"><span id="minutes" class="num">00</span><span class="label">Minutos</span></div>
+    <div class="sep">:</div>
+    <div class="unit"><span id="seconds" class="num">00</span><span class="label">Segundos</span></div>
+  </div>
+</div>
+
+<script>
+  // Fecha objetivo: 30 de enero de 2027 a las 00:00:00 (hora local)
+  const weddingDate = new Date(2027, 0, 30, 0, 0, 0).getTime();
+
+  function updateCountdown() {
+    const distance = weddingDate - Date.now();
+
+    if (distance < 0) {
+      clearInterval(timer);
+      document.getElementById("countdown").innerHTML = "<h4 class='done'>¡Llegó el gran día!</h4>";
+      return;
+    }
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    document.getElementById("days").innerText = String(days).padStart(2, '0');
+    document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+    document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+    document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
+  }
+
+  const timer = setInterval(updateCountdown, 1000);
+  updateCountdown();
+
+  // Si se abre desde el navegador (no instalada), un toque pone pantalla completa
+  document.addEventListener("click", () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {});
+    }
+  });
+
+  // Mantener la pantalla encendida mientras se muestra
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+  keepAwake();
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") keepAwake(); });
+
+  // Funciona sin internet una vez abierta
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+</script>
+
+</body>
+</html>
